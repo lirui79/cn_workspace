@@ -1,9 +1,10 @@
 1.  make
-2.  insmod mycdev.ko
+2.  insmod testvdev.ko
+2.  insmod testvdriv.ko
 3.  ls /dev  
-4.  find   mycdev  file node
-5. gcc testcdev.c -o testcdev
-6.  ./testcdev
+4.  find   VPU*  file node
+5. gcc testvpu.c -o testvpu
+6.  ./testvpu
 
 
 

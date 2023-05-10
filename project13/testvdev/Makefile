@@ -1,7 +1,7 @@
 KVERS = $(shell uname -r)
 
 # 生成模块名
-MODULE_NAME := testledriv
+MODULE_NAME := testvdev
 
 # 源文件目录
 SRC_PATH := ./
