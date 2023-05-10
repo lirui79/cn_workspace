@@ -9,7 +9,7 @@
 #include <string.h>
 #include <strings.h>
 
-#define MM_SIZE 4096
+#define MM_SIZE 1024
 
 int main(void)
 {

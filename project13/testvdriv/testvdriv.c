@@ -24,19 +24,50 @@ static int vpudrv_release(struct inode *_inode, struct file *fp) {
 
 static ssize_t vpudrv_read(struct file *fp, char __user *buf, size_t size, loff_t *off)
 {
+    int ret = 0, type = 0;
     struct vdev_t* vdevp = (struct vdev_t*)fp->private_data;
-    copy_to_user(buf, &vdevp->id, sizeof(unsigned int));
-    printk("read %s %x\n",vdevp->name, vdevp->id);
-    return sizeof(unsigned int);
+    copy_from_user(&type, buf, sizeof(unsigned int));
+    if(size > vdevp->vbufsize)  {
+        printk("size(%d) is out of range(%d)\n", size, vdevp->vbufsize);
+        //return -1;
+        size = vdevp->vbufsize;
+    }
+    if (type == 1) {//
+        size = sizeof(unsigned int);
+        ret = copy_to_user(buf, &vdevp->id, size);
+    } else {
+        ret = copy_to_user(buf, vdevp->vbuffer, size);        
+    }
+
+    if(-1 == ret) {
+        printk("read failed\n");
+        return -1;        
+    }
+
+    printk("read %s %d\n", vdevp->vbuffer, size);
+    return size;
 }
 
 static ssize_t vpudrv_write(struct file *fp, const char __user *buf, size_t size, loff_t *off)
 {
     struct vdev_t* vdevp = (struct vdev_t*)fp->private_data;
-    copy_from_user(&vdevp->id, buf, sizeof(unsigned int));
-    printk("write %s %x\n",vdevp->name, vdevp->id);
-    
-    return sizeof(unsigned int);
+    int ret = 0;
+    if(size > vdevp->vbufsize)
+    {
+        printk("size(%d) is out of range(%d)\n", size, vdevp->vbufsize);
+        //return -1;
+        size = vdevp->vbufsize;
+    }
+
+    ret = copy_from_user(vdevp->vbuffer, buf, size);    
+    if(-1 == ret)
+    {
+        printk("write failed\n");
+        return -1;        
+    }
+
+    printk("write %s %d\n", vdevp->vbuffer, size);
+    return size;
 }
 
 static int vpudrv_mmap(struct file* fp, struct vm_area_struct* vma)
