@@ -2,25 +2,16 @@
 #ifndef  __VPU_DEVICE_T_H__
 #define  __VPU_DEVICE_T_H__
 
-#include <linux/module.h>   
-#include <linux/init.h>  
-#include <linux/fs.h>   
-#include <linux/device.h>   
-#include <linux/slab.h>  
-#include <linux/cdev.h>  
-#include <linux/err.h>
-#include <linux/mm.h>  
-#include <linux/mm_types.h>  
-#include <asm/uaccess.h>  
-#include <linux/io.h>  
-#include <linux/platform_device.h>
-#include <linux/kern_levels.h>
-#include <linux/ioport.h>      
-#include <linux/of_address.h>
-#include <linux/of_irq.h>
-#include <linux/interrupt.h>
-#include <linux/device.h>
-#include <linux/uaccess.h>
+
+
+#define VDRV_IOCTL_MAGIC       'V'
+#define VDRV_IOCTL_VERSION     _IO(VDRV_IOCTL_MAGIC, 0)
+#define VDRV_IOCTL_RESET       _IO(VDRV_IOCTL_MAGIC, 1)
+#define VDRV_IOCTL_WAIT        _IO(VDRV_IOCTL_MAGIC, 2)
+#define VDRV_IOCTL_ALLOC       _IO(VDRV_IOCTL_MAGIC, 3)
+#define VDRV_IOCTL_FREE        _IO(VDRV_IOCTL_MAGIC, 4)
+
+
 struct vdev_t{
     char *name;
     unsigned int id;
@@ -38,7 +29,9 @@ struct vpu_driver_t {
     struct vpu_device_t  *vpudev;
     struct cdev          *vpucdev;
     struct class         *vpuclass;
+    char                  version[32];
 };
+
 
 
 #endif  //__VPU_DEVICE_T_H__

@@ -1,4 +1,22 @@
-
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/fs.h>
+#include <linux/device.h>
+#include <linux/slab.h>
+#include <linux/cdev.h>
+#include <linux/err.h>
+#include <linux/mm.h>
+#include <linux/mm_types.h>
+#include <asm/uaccess.h>
+#include <linux/io.h>
+#include <linux/platform_device.h>
+#include <linux/kern_levels.h>
+#include <linux/ioport.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
+#include <linux/interrupt.h>
+#include <linux/device.h>
+#include <linux/uaccess.h>
 
 #include "../vpudevice.h"
 
@@ -86,6 +104,29 @@ static int vpudrv_mmap(struct file* fp, struct vm_area_struct* vma)
     return 0;
 }
 
+static long vpudrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    int ret = 0;
+    printk("vpudrv_ioctl cmd:%d\n", cmd);
+    switch (cmd) {
+        case VDRV_IOCTL_VERSION://VERSION
+            ret = copy_to_user((void __user *)arg, nvdriver.version, 32);
+            break;
+        case VDRV_IOCTL_RESET://RESET
+            break;
+        case VDRV_IOCTL_WAIT://WAIT
+            break;
+        case VDRV_IOCTL_ALLOC://ALLOC
+            break;
+        case VDRV_IOCTL_FREE://FREE
+            break;
+        default:
+            printk("error vpudrv_ioctl cmd\n");
+            break;
+    }
+
+    return 0;
+}
 
 static struct file_operations fops={
     .owner = THIS_MODULE,
@@ -93,6 +134,7 @@ static struct file_operations fops={
     .release = vpudrv_release,
     .read = vpudrv_read,
     .write = vpudrv_write,
+    .unlocked_ioctl = vpudrv_ioctl,
     .mmap = vpudrv_mmap,
 };
 
@@ -170,6 +212,7 @@ static struct platform_driver vpudrv = {
 
 static int vpudrv_init(void)
 {
+    sprintf(nvdriver.version, "1.0.0.1");
     platform_driver_register(&vpudrv);
     return 0;
 }
@@ -183,3 +226,5 @@ static void vpudrv_exit(void)
 module_init(vpudrv_init);
 module_exit(vpudrv_exit);
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("lirui");
+MODULE_DESCRIPTION("vpu platform driver");

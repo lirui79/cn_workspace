@@ -1,3 +1,22 @@
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/fs.h>
+#include <linux/device.h>
+#include <linux/slab.h>
+#include <linux/cdev.h>
+#include <linux/err.h>
+#include <linux/mm.h>
+#include <linux/mm_types.h>
+#include <asm/uaccess.h>
+#include <linux/io.h>
+#include <linux/platform_device.h>
+#include <linux/kern_levels.h>
+#include <linux/ioport.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
+#include <linux/interrupt.h>
+#include <linux/device.h>
+#include <linux/uaccess.h>
 
 #include "../vpudevice.h"
 
@@ -50,3 +69,5 @@ static void vpu_exit(void)
 module_init(vpu_init);
 module_exit(vpu_exit);
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("lirui");
+MODULE_DESCRIPTION("vpu platform device");

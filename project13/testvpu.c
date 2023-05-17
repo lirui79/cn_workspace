@@ -8,6 +8,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/ioctl.h>
+
+#include "vpudevice.h"
 
 #define MM_SIZE 1024
 
@@ -17,6 +20,7 @@ int main(void)
     char devName[32] = {0};
     char buffer[MM_SIZE] = {0};
     char* buf_addr = NULL;
+    char version[32] = {0};
     for (i = 0; i < 4; ++i) {
 				sprintf(devName,"/dev/VPU%d", i);
 				fd = open(devName,O_RDWR);
@@ -26,7 +30,8 @@ int main(void)
 				printf("read %d %x\n", ret, rvalue);
 				ret = write(fd, &wvalue, sizeof(unsigned int));
 				printf("write %d %x\n", ret, wvalue);
-    
+            ret = ioctl(fd, VDRV_IOCTL_VERSION, (void*)version);
+            printf("version:%s\n", version);
 		    bzero(buffer, MM_SIZE);
 		    write(fd, buffer, MM_SIZE);
 		    write(fd, "write_device_mmap", strlen("write_device_mmap"));
