@@ -47,6 +47,7 @@ static int vpu_init(void)
     int i = 0;
     for (i = 0; i < 4; ++i) {
         vpudata[i].vbuffer = kmalloc(vpudata[i].vbufsize, GFP_KERNEL);
+        memset(vpudata[i].vbuffer, 0x00, vpudata[i].vbufsize);
     }
     platform_device_register(&vpupdev);
     printk("vpudev:vpu_init\n");

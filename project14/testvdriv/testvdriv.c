@@ -50,7 +50,7 @@ static int vpudrv_release(struct inode *_inode, struct file *fp) {
 
 static ssize_t vpudrv_read(struct file *fp, char __user *buf, size_t size, loff_t *off)
 {
-    int ret = 0, type = 0;
+    int ret = 0;
     struct vpu_data_t *vdata = (struct vpu_data_t*)fp->private_data;
     copy_from_user(&type, buf, sizeof(unsigned int));
     if(size > vdata->vbufsize)  {
@@ -58,8 +58,7 @@ static ssize_t vpudrv_read(struct file *fp, char __user *buf, size_t size, loff_
         //return -1;
         size = vdata->vbufsize;
     }
-    if (type == 1) {//
-        size = sizeof(unsigned int);
+    if (size == sizeof(unsigned int)) {//
         ret = copy_to_user(buf, &vdata->vid, size);
     } else {
         ret = copy_to_user(buf, vdata->vbuffer, size);        
