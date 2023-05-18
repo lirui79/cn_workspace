@@ -44,7 +44,6 @@ static ssize_t vpudrv_read(struct file *fp, char __user *buf, size_t size, loff_
 {
     int ret = 0;
     struct vdev_t* vdevp = (struct vdev_t*)fp->private_data;
-    copy_from_user(&type, buf, sizeof(unsigned int));
     if(size > vdevp->vbufsize)  {
         printk("size(%d) is out of range(%d)\n", size, vdevp->vbufsize);
         //return -1;
