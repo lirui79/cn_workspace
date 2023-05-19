@@ -1,0 +1,14 @@
+
+#ifndef  __VPU_IOCTL_CMD_H__
+#define  __VPU_IOCTL_CMD_H__
+
+#define VDRV_IOCTL_MAGIC       'V'
+#define VDRV_IOCTL_VERSION     _IO(VDRV_IOCTL_MAGIC, 0)
+#define VDRV_IOCTL_RESET       _IO(VDRV_IOCTL_MAGIC, 1)
+#define VDRV_IOCTL_WAIT        _IO(VDRV_IOCTL_MAGIC, 2)
+#define VDRV_IOCTL_ALLOC       _IO(VDRV_IOCTL_MAGIC, 3)
+#define VDRV_IOCTL_FREE        _IO(VDRV_IOCTL_MAGIC, 4)
+
+
+
+#endif  //__VPU_IOCTL_CMD_H__
