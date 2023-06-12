@@ -29,7 +29,7 @@ static struct vpu_data_t vpudata[] = {
 
 static void vpu_release(struct device *dev) {
     struct platform_device* pdev = (struct platform_device*)container_of(dev, struct platform_device, dev);
-    printk("vpudev:vpu_release %s %d\n", pdev->name, pdev->id);
+    printk(KERN_INFO "[%s:%d] %s %d\n", __FUNCTION__, __LINE__, pdev->name, pdev->id);
 }
 
 static struct platform_device vpupdev[] = {
@@ -76,7 +76,7 @@ int vpu_init(void) {
         vpudata[i].vid = vpupdev[i].id;
         platform_device_register(&vpupdev[i]);
     }
-    printk("vpudev:vpu_init\n");
+    printk(KERN_INFO "[%s:%d] %d devices init\n", __FUNCTION__, __LINE__, VPU_DEVICE_NUM);
     return 0;
 }
 EXPORT_SYMBOL_GPL(vpu_init);
@@ -87,6 +87,6 @@ void vpu_exit(void) {
         platform_device_unregister(&vpupdev[i]);
         kfree(vpudata[i].vbuffer);
     }
-    printk("vpudev:vpu_exit\n");
+    printk(KERN_INFO "[%s:%d] %d devices exit\n", __FUNCTION__, __LINE__, VPU_DEVICE_NUM);
 }
 EXPORT_SYMBOL_GPL(vpu_exit);

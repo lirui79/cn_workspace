@@ -16,4 +16,5 @@ struct vpu_data_t{
 int   vpu_init(void);
 void  vpu_exit(void);
 
+
 #endif  //__VPU_DEVICE_T_H__

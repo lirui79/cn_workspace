@@ -34,56 +34,57 @@ static int vpudrv_open(struct inode *_inode, struct file *fp)
 {
     struct vpu_data_t *vdata=  (struct vpu_data_t*)container_of(_inode->i_cdev, struct vpu_data_t, vcdev);
     fp->private_data = vdata;
-    printk("vpu driver open <%s %d> <%d:%d> success\n", vdata->vname, vdata->vid, MAJOR(_inode->i_rdev), vpudriver.vdev);
+    printk(KERN_INFO "[%s:%d] open <%s %d> <%d:%d> success\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, MAJOR(_inode->i_rdev), vpudriver.vdev);
     return 0;
 }
 
 static int vpudrv_release(struct inode *_inode, struct file *fp) {
     struct vpu_data_t *vdata = (struct vpu_data_t*)fp->private_data;
-    printk("release %s %d\n",vdata->vname, vdata->vid);
+    printk(KERN_INFO "[%s:%d] release <%s %d> success\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid);
     return 0;
 }
 
 static ssize_t vpudrv_read(struct file *fp, char __user *buf, size_t size, loff_t *off)
 {
     int ret = 0;
+    size_t rsize = size;
     struct vpu_data_t *vdata = (struct vpu_data_t*)fp->private_data;
-    if(size > vdata->vbufsize)  {
-        printk("size(%d) is out of range(%d)\n", size, vdata->vbufsize);
-        size = vdata->vbufsize;
+    if(rsize > vdata->vbufsize)  {
+        printk(KERN_WARNING "[%s:%d] read <%s %d> size(%d > %d)\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, rsize, vdata->vbufsize);
+        rsize = vdata->vbufsize;
     }
-    if (size == sizeof(unsigned int)) {//
-        ret = copy_to_user(buf, &vdata->vid, size);
+    if (rsize == sizeof(unsigned int)) {//
+        ret = copy_to_user(buf, &vdata->vid, rsize);
     } else {
-        ret = copy_to_user(buf, vdata->vbuffer, size);        
+        ret = copy_to_user(buf, vdata->vbuffer, rsize);
     }
 
     if(-1 == ret) {
-        printk("read failed\n");
+        printk(KERN_ERR "[%s:%d] read <%s %d> failed\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid);
         return -1;        
     }
 
-    printk("read %p %d\n", (char*)vdata->vbuffer, size);
-    return size;
+    printk(KERN_DEBUG "[%s:%d] read <%s %d> <%p %d>\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, vdata->vbuffer, rsize);
+    return rsize;
 }
 
 static ssize_t vpudrv_write(struct file *fp, const char __user *buf, size_t size, loff_t *off)
 {
     int ret = 0;
+    size_t rsize = size;
     struct vpu_data_t *vdata = (struct vpu_data_t*)fp->private_data;
-    if(size > vdata->vbufsize) {
-        printk("size(%d) is out of range(%d)\n", size, vdata->vbufsize);
-        size = vdata->vbufsize;
+    if(rsize > vdata->vbufsize) {
+        printk(KERN_WARNING "[%s:%d] write <%s %d> size(%d > %d)\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, rsize, vdata->vbufsize);
+        rsize = vdata->vbufsize;
     }
-
-    ret = copy_from_user(vdata->vbuffer, buf, size);    
+    ret = copy_from_user(vdata->vbuffer, buf, rsize);
     if(-1 == ret) {
-        printk("write failed\n");
+        printk(KERN_ERR "[%s:%d] write <%s %d> failed\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid);
         return -1;        
     }
 
-    printk("write %p %d\n", (char*)vdata->vbuffer, size);
-    return size;
+    printk(KERN_DEBUG "[%s:%d] write <%s %d> <%p %d>\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, vdata->vbuffer, rsize);
+    return rsize;
 }
 
 static int vpudrv_mmap(struct file* fp, struct vm_area_struct* vma)
@@ -98,17 +99,18 @@ static int vpudrv_mmap(struct file* fp, struct vm_area_struct* vma)
     {
         return -EAGAIN;
     }
-    printk("vpudrv_mmap\n");
+    printk(KERN_INFO "[%s:%d] mmap <%s %d> success\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid);
     return 0;
 }
 
-static long vpudrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+static long vpudrv_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
 {
     int ret = 0;
-    printk("vpudrv_ioctl cmd:%d\n", cmd);
+    struct vpu_data_t *vdata = (struct vpu_data_t*)fp->private_data;
+    printk(KERN_DEBUG "[%s:%d] ioctl <%s %d> %d success\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, cmd);
     switch (cmd) {
         case VDRV_IOCTL_VERSION://VERSION
-            ret = copy_to_user((void __user *)arg, vpudriver.version, 16);
+            ret = copy_to_user((void __user *)arg, vpudriver.version, 15);
             break;
         case VDRV_IOCTL_RESET://RESET
             break;
@@ -119,7 +121,7 @@ static long vpudrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case VDRV_IOCTL_FREE://FREE
             break;
         default:
-            printk("error vpudrv_ioctl cmd\n");
+            printk(KERN_ERR "[%s:%d] ioctl <%s %d> %d failed\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid, cmd);
             break;
     }
 
@@ -140,9 +142,9 @@ static struct file_operations fops={
 static int vpudrv_probe(struct platform_device *pdev) {
     int ret = 0;
     struct device *devices = NULL;
-    printk("probe\n");
     /*1 dev number*/
     struct vpu_data_t *vdata = (struct vpu_data_t *)pdev->dev.platform_data;
+    printk(KERN_DEBUG "[%s:%d] probe <%s %d>\n", __FUNCTION__, __LINE__, vdata->vname, vdata->vid);
 /*2 init cdev */
     cdev_init(&(vdata->vcdev),&fops);
     vdata->vcdev.owner = THIS_MODULE;
@@ -150,21 +152,23 @@ static int vpudrv_probe(struct platform_device *pdev) {
     vdata->vdev = MKDEV(vpudriver.vdev, pdev->id);
     ret = cdev_add(&(vdata->vcdev),  vdata->vdev,1);
     if (ret != 0) {
-       printk("cdev_add wrong %d %d %d\n", vdata->vdev, pdev->id, ret);
+       printk(KERN_ERR "[%s:%d] probe <%s %d> %d\n", __FUNCTION__, __LINE__, vdata->vname, pdev->id, ret);
+       return -1;
     }
 
     devices = device_create(vpudriver.vclass, NULL, vdata->vdev, NULL, vdata->vname);
     if (devices == NULL) {
-       printk("device_create wrong %d %d %d\n", vdata->vdev, pdev->id, ret);
+       printk(KERN_ERR "[%s:%d] probe <%s %d>\n", __FUNCTION__, __LINE__, vdata->vname, pdev->id);
+       return -2;
     }
     return 0;
 }
 
 static int vpudrv_remove(struct platform_device *pdev) {
     struct vpu_data_t *vdata = (struct vpu_data_t *)pdev->dev.platform_data;
-    printk("remove\n");
     device_destroy(vpudriver.vclass, vdata->vdev);
     cdev_del(&(vdata->vcdev));
+    printk(KERN_DEBUG "[%s:%d] remove <%s %d>\n", __FUNCTION__, __LINE__, vdata->vname, pdev->id);
     return 0;
 }
 
@@ -191,12 +195,13 @@ static int vpudrv_init(void) {
     vpu_init();
     ret = alloc_chrdev_region(&(vpudriver.vdev), 0, vpudriver.ndev, "VPU");
     if (ret != 0) {
+        printk(KERN_ERR "[%s:%d] init <%d %d>\n", __FUNCTION__, __LINE__, vpudriver.vdev, ret);
         return -1;
     }
     vpudriver.vdev = MAJOR(vpudriver.vdev);
+    printk(KERN_DEBUG "[%s:%d] init <%d %d>\n", __FUNCTION__, __LINE__, vpudriver.vdev, vpudriver.ndev);
     vpudriver.vclass = class_create(THIS_MODULE, "vpudriver");
     platform_driver_register(&vpudrv);
-    printk("vpudrv:vpudrv_init %d\n", vpudriver.vdev);
     return 0;
 }
 
@@ -205,7 +210,7 @@ static void vpudrv_exit(void) {
     class_destroy(vpudriver.vclass);
     unregister_chrdev_region(vpudriver.vdev, vpudriver.ndev);
     vpu_exit();
-    printk("vpudrv:vpudrv_exit\n");
+    printk(KERN_DEBUG "[%s:%d] exit <%d %d>\n", __FUNCTION__, __LINE__, vpudriver.vdev, vpudriver.ndev);
 }
 
 
