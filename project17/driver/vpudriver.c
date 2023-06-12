@@ -154,7 +154,7 @@ static int vpudrv_probe(struct platform_device *pdev) {
     }
 
     devices = device_create(vpudriver.vclass, NULL, vdata->vdev, NULL, vdata->vname);
-    if (devices == 0) {
+    if (devices == NULL) {
        printk("device_create wrong %d %d %d\n", vdata->vdev, pdev->id, ret);
     }
     return 0;
