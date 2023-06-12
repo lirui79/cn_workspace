@@ -30,13 +30,12 @@ struct vpu_driver_t{
     struct vpu_data_t *vdata;
 };
 
-static struct vpu_driver_t vpudriver = {{}, 0, 0x04, "1.0.0.2", NULL, NULL};
+static struct vpu_driver_t vpudriver = {{}, 0, 0x04, "1.0.0.3", NULL, NULL};
 
 static int vpudrv_open(struct inode *_inode, struct file *fp)
 {
     struct vpu_driver_t *vdrv =  (struct vpu_driver_t*)container_of(_inode->i_cdev, struct vpu_driver_t, vcdev);
     struct vpu_data_t *vdata = &(vdrv->vdata[MINOR(_inode->i_rdev)]);
-//    struct vpu_data_t *vdata = &(vpudriver.vdata[MINOR(_inode->i_rdev)]);
     fp->private_data = vdata;
     printk("vpu driver open <%s %d> <%d:%d> success\n", vdata->vname, vdata->vid, MAJOR(_inode->i_rdev), vpudriver.vdev);
     return 0;
@@ -75,10 +74,8 @@ static ssize_t vpudrv_write(struct file *fp, const char __user *buf, size_t size
 {
     int ret = 0;
     struct vpu_data_t *vdata = (struct vpu_data_t*)fp->private_data;
-    if(size > vdata->vbufsize)
-    {
+    if(size > vdata->vbufsize) {
         printk("size(%d) is out of range(%d)\n", size, vdata->vbufsize);
-        //return -1;
         size = vdata->vbufsize;
     }
 
@@ -132,7 +129,7 @@ static long vpudrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     return 0;
 }
 
-static struct file_operations fops = {
+static struct file_operations fops={
     .owner = THIS_MODULE,
     .open = vpudrv_open,
     .release = vpudrv_release,
@@ -143,65 +140,26 @@ static struct file_operations fops = {
 };
 
 
-static int vpudrv_probe(struct platform_device *pdev)
-{
+static int vpudrv_probe(struct platform_device *pdev) {
     int ret = 0, i = 0;
     struct device *devices = NULL;
     printk("probe\n");
     /*1 dev number*/
     struct vpu_data_t *vdata = (struct vpu_data_t *)pdev->dev.platform_data;
-    vpudriver.vdata = vdata;
-    ret = alloc_chrdev_region(&(vpudriver.vdev), 0, vpudriver.ndev, "VPU");
-    if (ret != 0) {
-        goto ERROR0;
+    if (NULL == vpudriver.vdata) {
+        vpudriver.vdata = vdata;
     }
-    
-    /*2 init cdev */    //vdata->vcdev = cdev_alloc();
-    cdev_init(&(vpudriver.vcdev),&fops);
-    vpudriver.vcdev.owner = THIS_MODULE;
-    
-    /*3 add cdev */
-    ret = cdev_add(&(vpudriver.vcdev), vpudriver.vdev, vpudriver.ndev);
-    if (ret != 0) {
-        goto ERROR1;
-    }
-    /*4 create dev file */
-    vpudriver.vclass = class_create(THIS_MODULE, "vpudriver");
-    for (i = 0; i < vpudriver.ndev; ++i) {
-        devices = device_create(vpudriver.vclass, NULL, MKDEV(MAJOR(vpudriver.vdev), vdata[i].vid), NULL, vdata[i].vname);
-        if (devices == NULL) {
-            goto ERROR3;
-        }
+    devices = device_create(vpudriver.vclass, NULL, MKDEV(MAJOR(vpudriver.vdev), vdata->vid), NULL, vdata->vname);
+    if (devices == NULL) {
+        
     }
     return 0;
-ERROR3:
-    /* 释放创建成功的设备节点 */
-    for (i--; i >= 0; i--) {
-        device_destroy(vpudriver.vclass, MKDEV(MAJOR(vpudriver.vdev), vdata[i].vid));
-    }
-ERROR2:
-    /* 释放设备节点对象 */
-    class_destroy(vpudriver.vclass);
-    /* 释放字符设备结构体空间 */
-    cdev_del(&(vpudriver.vcdev));
-ERROR1:
-    /* 释放设备号 */
-    unregister_chrdev_region(vpudriver.vdev, vpudriver.ndev);
-ERROR0:
-    return ret;
 }
 
-static int vpudrv_remove(struct platform_device *pdev)
-{
+static int vpudrv_remove(struct platform_device *pdev) {
     struct vpu_data_t *vdata = (struct vpu_data_t *)pdev->dev.platform_data;
-    int i = vpudriver.ndev;
     printk("remove\n");
-    for (i--; i >= 0; i--) {
-        device_destroy(vpudriver.vclass, MKDEV(MAJOR(vpudriver.vdev), vdata[i].vid));
-    }
-    class_destroy(vpudriver.vclass);
-    cdev_del(&(vpudriver.vcdev));
-    unregister_chrdev_region(vpudriver.vdev, vpudriver.ndev);
+    device_destroy(vpudriver.vclass, MKDEV(MAJOR(vpudriver.vdev), vdata->vid));
     return 0;
 }
 
@@ -222,15 +180,37 @@ static struct platform_driver vpudrv = {
     .id_table   = vpupdev_id,
 };
 
+
 static int vpudrv_init(void) {
+    int ret = 0;
     vpu_init();
+    ret = alloc_chrdev_region(&(vpudriver.vdev), 0, vpudriver.ndev, "VPU");
+    if (ret != 0) {
+        return -1;
+    }
+    /*2 init cdev */    //vdata->vcdev = cdev_alloc();
+    cdev_init(&(vpudriver.vcdev),&fops);
+    vpudriver.vcdev.owner = THIS_MODULE;
+    
+    /*3 add cdev */
+    ret = cdev_add(&(vpudriver.vcdev), vpudriver.vdev, vpudriver.ndev);
+    if (ret != 0) {
+        return -2;
+    }
+    /*4 create dev file */
+    vpudriver.vclass = class_create(THIS_MODULE, "vpudriver");
     platform_driver_register(&vpudrv);
+    printk("vpudrv:vpudrv_init\n");
     return 0;
 }
 
 static void vpudrv_exit(void) {
     platform_driver_unregister(&vpudrv);
+    class_destroy(vpudriver.vclass);
+    cdev_del(&(vpudriver.vcdev));
+    unregister_chrdev_region(vpudriver.vdev, vpudriver.ndev);
     vpu_exit();
+    printk("vpudrv:vpudrv_exit\n");
 }
 
 

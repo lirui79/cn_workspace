@@ -21,10 +21,10 @@
 #include "vpudevice.h"
 
 static struct vpu_data_t vpudata[] = {
-    {"VPU0",0, 0x0, 0x0, 0x400},
-    {"VPU1",1, 0x0, 0x0, 0x400},
-    {"VPU2",2, 0x0, 0x0, 0x400},
-    {"VPU3",3, 0x0, 0x0, 0x400},
+    {"VPU0",0x0, 0, 0x0, 0x400, {}},
+    {"VPU1",0x0, 1, 0x0, 0x400, {}},
+    {"VPU2",0x0, 2, 0x0, 0x400, {}},
+    {"VPU3",0x0, 3, 0x0, 0x400, {}},
 };
 
 static void vpu_release(struct device *dev) {
@@ -32,23 +32,50 @@ static void vpu_release(struct device *dev) {
     printk("vpudev:vpu_release %s %d\n", pdev->name, pdev->id);
 }
 
-static struct platform_device vpupdev = {
-    .name = "vpudev",
-    .id   = 0,
-    .dev  = {
-           .release = vpu_release,
-           .platform_data = (void *)vpudata,
+static struct platform_device vpupdev[] = {
+    [0]={
+        .name = "vpudev",
+        .id   = 0,
+        .dev  = {
+               .release = vpu_release,
+               .platform_data = (void *)&vpudata[0],
+        },
+    },
+    [1]={
+        .name = "vpudev",
+        .id   = 1,
+        .dev  = {
+               .release = vpu_release,
+               .platform_data = (void *)&vpudata[1],
+        },
+    },
+    [2]={
+        .name = "vpudev",
+        .id   = 2,
+        .dev  = {
+               .release = vpu_release,
+               .platform_data = (void *)&vpudata[2],
+        },
+    },
+    [3]={
+        .name = "vpudev",
+        .id   = 3,
+        .dev  = {
+               .release = vpu_release,
+               .platform_data = (void *)&vpudata[3],
+        },
     },
 };
 
 
 int vpu_init(void) {
     int i = 0;
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < VPU_DEVICE_NUM; ++i) {
         vpudata[i].vbuffer = kmalloc(vpudata[i].vbufsize, GFP_KERNEL);
         memset(vpudata[i].vbuffer, 0x00, vpudata[i].vbufsize);
+        vpudata[i].vid = vpupdev[i].id;
+        platform_device_register(&vpupdev[i]);
     }
-    platform_device_register(&vpupdev);
     printk("vpudev:vpu_init\n");
     return 0;
 }
@@ -56,8 +83,8 @@ EXPORT_SYMBOL_GPL(vpu_init);
 
 void vpu_exit(void) {
     int i = 0;
-    platform_device_unregister(&vpupdev);
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < VPU_DEVICE_NUM; ++i) {
+        platform_device_unregister(&vpupdev[i]);
         kfree(vpudata[i].vbuffer);
     }
     printk("vpudev:vpu_exit\n");
