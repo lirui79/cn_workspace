@@ -73,8 +73,9 @@ static void declare_func(Fish, move, IMoveable* cthis) {
 
 static void declare_func(Fish, init, Fish* cthis, const char* name, int age) {
     Animal* animal = class_mem(Animal, cthis, animal);
-    animal->setName(animal, name);
-    animal->setAge(animal, age);
+//    animal->setName(animal, name);
+//    animal->setAge(animal, age);
+    animal->init(animal, name, age);
 }
 
 declare_construct(Fish) {
